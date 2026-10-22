@@ -120,6 +120,12 @@ fun AboutInfoScreen(
                             }
                         )
 
+                        Text(
+                            text = stringResource(R.string.unofficial_modified_notice, BuildKeys.LAUNCHER_NAME),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_avatar_movtery),
                             title = stringResource(R.string.about_launcher_author_movtery_title),

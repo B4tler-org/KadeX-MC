@@ -341,12 +341,21 @@ private fun <E: TitledNavKey> TopBar(
 
                 if (parent == null) {
                     if (festivals.isEmpty()) {
-                        Text(
-                            text = BuildKeys.LAUNCHER_IDENTIFIER,
-                            style = style,
-                            softWrap = softWarp,
-                            maxLines = maxLines
-                        )
+                        androidx.compose.foundation.layout.Column {
+                            Text(
+                                text = BuildKeys.LAUNCHER_IDENTIFIER,
+                                style = style,
+                                softWrap = softWarp,
+                                maxLines = maxLines
+                            )
+                            Text(
+                                text = stringResource(R.string.unofficial_modified_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                softWrap = softWarp,
+                                maxLines = maxLines
+                            )
+                        }
                     } else {
                         FestivalTitleText(
                             festivals = festivals,

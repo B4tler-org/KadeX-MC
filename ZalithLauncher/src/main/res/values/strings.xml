@@ -1270,6 +1270,8 @@
     <string name="control_editor_exit_message">Are you sure you want to exit directly? This will cause any changes to be unsaved. If you need to save, please check the editor menu.</string>
     <string name="control_editor_exit_confirm">Exit Directly</string>
     <!-- About -->
+    <string name="unofficial_modified_label">Unofficial Modified Version</string>
+    <string name="unofficial_modified_notice">%1$s is an unofficial modified version of Zalith Launcher 2 (© MovTery and contributors, GPL-3.0). It is not affiliated with, endorsed by, or supported by the original developers, Mojang Studios, or Microsoft. Minecraft is a trademark of Mojang Studios.</string>
     <string name="about_launcher_title">About Launcher</string>
     <string name="about_launcher_version">Launcher Version: %s</string>
     <string name="about_launcher_author_movtery_title">MovTery</string>
