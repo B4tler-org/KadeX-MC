@@ -340,6 +340,14 @@ fun LauncherSettingsScreen(
                         suffix = "x"
                     )
 
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
+                        unit = AllSettings.kadePlayGlow,
+                        title = "Play button glow",
+                        summary = "Soft pulsing glow on the Play button. It stays still when animation intensity is 0 or system animations are off."
+                    )
+
                     IntSliderSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
                         position = CardPosition.Middle,

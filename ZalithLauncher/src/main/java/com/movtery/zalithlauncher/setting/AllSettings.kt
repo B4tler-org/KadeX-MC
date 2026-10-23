@@ -401,6 +401,11 @@ object AllSettings : SettingsRegistry() {
     val launcherFestivalEffects = boolSetting("launcherFestivalEffects", true)
 
     /**
+     * KadeX: Play button glow on the home screen
+     */
+    val kadePlayGlow = boolSetting("kadePlayGlow", true)
+
+    /**
      * 动画倍速
      */
     val launcherAnimateSpeed = intSetting("launcherAnimateSpeed", 5, 0..10)

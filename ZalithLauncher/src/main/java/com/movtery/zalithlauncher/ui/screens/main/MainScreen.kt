@@ -176,7 +176,7 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            TopBar(
+            KadeTopBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
@@ -202,6 +202,12 @@ fun MainScreen(
                     screenBackStackModel.mainScreen.removeAndNavigateTo(
                         removes = screenBackStackModel.clearBeforeNavKeys,
                         screenKey = NormalNavKey.Multiplayer
+                    )
+                },
+                toVersionsScreen = {
+                    screenBackStackModel.mainScreen.removeAndNavigateTo(
+                        removes = screenBackStackModel.clearBeforeNavKeys,
+                        screenKey = NormalNavKey.VersionsManager
                     )
                 },
                 openFileManager = {

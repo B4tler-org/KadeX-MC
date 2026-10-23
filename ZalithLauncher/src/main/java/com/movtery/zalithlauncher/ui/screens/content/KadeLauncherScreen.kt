@@ -462,15 +462,19 @@ private fun KadePlayButton(
     )
 
     val context = LocalContext.current
-    val reduceMotion = remember {
+    val systemAnimationsOff = remember {
         Settings.Global.getFloat(
             context.contentResolver,
             Settings.Global.ANIMATOR_DURATION_SCALE,
             1f
         ) == 0f
     }
+    //Appearance：Play 按钮光晕开关，并跟随启动器的“动画幅度”设置（为 0 时静止）
+    val glowEnabled = AllSettings.kadePlayGlow.state
+    val animationExtent = AllSettings.launcherAnimateExtent.state
+    val reduceMotion = systemAnimationsOff || !glowEnabled || animationExtent == 0
     val glow: Float = if (reduceMotion) {
-        0.6f
+        if (glowEnabled) 0.6f else 0.2f
     } else {
         val glowTransition = rememberInfiniteTransition(label = "KadePlayGlow")
         val animatedGlow by glowTransition.animateFloat(

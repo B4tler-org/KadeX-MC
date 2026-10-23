@@ -57,6 +57,7 @@ import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryIcon
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryItem
 import com.movtery.zalithlauncher.ui.screens.content.settings.AboutInfoScreen
+import com.movtery.zalithlauncher.ui.screens.content.settings.KadeAboutInfoScreen
 import com.movtery.zalithlauncher.ui.screens.content.settings.ControlManageScreen
 import com.movtery.zalithlauncher.ui.screens.content.settings.ControlSettingsScreen
 import com.movtery.zalithlauncher.ui.screens.content.settings.GameSettingsScreen
@@ -233,7 +234,7 @@ private fun NavigationUI(
                     ControlManageScreen(key, settingsScreenKey, mainScreenKey, eventViewModel, submitError)
                 }
                 entry<NormalNavKey.Settings.AboutInfo> {
-                    AboutInfoScreen(
+                    KadeAboutInfoScreen(
                         key = key,
                         settingsScreenKey = settingsScreenKey,
                         mainScreenKey = mainScreenKey,
