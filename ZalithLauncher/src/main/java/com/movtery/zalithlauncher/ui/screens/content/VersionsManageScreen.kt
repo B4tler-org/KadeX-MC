@@ -99,6 +99,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.GamePathOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionCategory
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionCategoryItem
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionItemLayout
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadeVersionItemLayout
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionsOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.ui.theme.cardColor
@@ -541,7 +542,7 @@ private fun VersionsLayout(
                         state = listState,
                     ) {
                         items(versions, key = { it.toString() }) { version ->
-                            VersionItemLayout(
+                            KadeVersionItemLayout(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .animateItem(),
@@ -549,7 +550,7 @@ private fun VersionsLayout(
                                 selected = version == currentVersion,
                                 submitError = submitError,
                                 onSelected = {
-                                    if (version == currentVersion) return@VersionItemLayout
+                                    if (version == currentVersion) return@KadeVersionItemLayout
                                     if (!VersionsManager.saveVersion(version)) {
                                         //不允许选择无效版本
                                         versionsOperation = VersionsOperation.InvalidDelete(version)

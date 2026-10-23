@@ -18,6 +18,7 @@
 
 package com.movtery.zalithlauncher.ui.screens.content
 
+import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -76,6 +77,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
@@ -160,6 +162,38 @@ private fun KadeAccountTypeChip(
 }
 
 /**
+ * Kade'X MC：启动就绪提示
+ * 仅基于启动器已有的真实状态（当前版本、当前账号），不阻止启动
+ */
+@Composable
+private fun KadeReadinessHint(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(18.dp),
+            painter = painterResource(R.drawable.ic_warning_outlined),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.tertiary
+        )
+        Text(
+            text = text,
+            maxLines = 1,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+/**
  * Kade'X MC：主启动按钮
  * 渐变 + 呼吸光晕 + 按压缩放，副标题显示当前版本
  */
@@ -179,16 +213,29 @@ private fun KadePlayButton(
         label = "KadePlayScale"
     )
 
-    val glowTransition = rememberInfiniteTransition(label = "KadePlayGlow")
-    val glow by glowTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "KadePlayGlowAlpha"
-    )
+    val context = LocalContext.current
+    val reduceMotion = remember {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+    val glow: Float = if (reduceMotion) {
+        0.6f
+    } else {
+        val glowTransition = rememberInfiniteTransition(label = "KadePlayGlow")
+        val animatedGlow by glowTransition.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 0.9f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "KadePlayGlowAlpha"
+        )
+        animatedGlow
+    }
 
     val brush = Brush.horizontalGradient(
         colors = listOf(
@@ -523,6 +570,7 @@ private fun VersionsContent(
 ) {
     val version by VersionsManager.currentVersion.collectAsStateWithLifecycle()
     val isRefreshing by VersionsManager.isRefreshing.collectAsStateWithLifecycle()
+    val currentAccount by AccountsManager.currentAccountFlow.collectAsStateWithLifecycle()
 
     var showList by remember { mutableStateOf(false) }
     var versionManagerRow by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -614,6 +662,22 @@ private fun VersionsContent(
                     )
                 }
             }
+        }
+
+        val readinessText: String? = when {
+            isRefreshing -> null
+            version == null -> stringResource(R.string.versions_manage_no_versions)
+            currentAccount == null -> stringResource(R.string.account_add_new_account)
+            else -> null
+        }
+        if (readinessText != null) {
+            KadeReadinessHint(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(PaddingValues(horizontal = 12.dp))
+                    .padding(bottom = 8.dp),
+                text = readinessText
+            )
         }
 
         KadePlayButton(
