@@ -18,6 +18,7 @@
 
 package com.movtery.zalithlauncher.ui.screens.content
 
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -49,16 +50,23 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -77,6 +85,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -85,6 +94,7 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -158,6 +168,244 @@ private fun KadeAccountTypeChip(
         maxLines = 1,
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onPrimaryContainer
+    )
+}
+
+
+/**
+ * Kade'X MC：快捷面板中的操作行
+ */
+@Composable
+private fun KadeQuickAction(
+    iconRes: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(22.dp),
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = if (enabled) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.38f)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = if (enabled) colorScheme.onSurface else colorScheme.onSurface.copy(alpha = 0.38f)
+        )
+    }
+}
+
+/**
+ * Kade'X MC：快捷面板（Quick Panel）
+ * 所有操作都直接调用启动器已有的功能，不在这里复制任何业务逻辑
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KadeQuickPanel(
+    currentVersion: Version?,
+    account: Account?,
+    onDismiss: () -> Unit,
+    onLaunchGame: (Version?) -> Unit,
+    toVersionManageScreen: () -> Unit,
+    toVersionSettingsScreen: () -> Unit,
+    toAccountManageScreen: () -> Unit,
+    onOpenDiagnostics: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val versions by VersionsManager.versions.collectAsStateWithLifecycle()
+    val versionValid = currentVersion?.isValid() == true
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Quick panel",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            // 当前状态摘要
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(colorScheme.primary.copy(alpha = 0.10f))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = currentVersion?.getVersionName()
+                        ?: stringResource(R.string.versions_manage_no_versions),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (versionValid) {
+                    Text(
+                        text = currentVersion?.getVersionSummary().orEmpty(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = account?.username ?: stringResource(R.string.account_add_new_account),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
+
+            KadeQuickAction(
+                iconRes = R.drawable.ic_play_arrow_filled,
+                label = stringResource(R.string.main_launch_game)
+            ) {
+                onDismiss()
+                onLaunchGame(null)
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_person_outlined,
+                label = "Accounts"
+            ) {
+                onDismiss()
+                toAccountManageScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_folder_outlined,
+                label = "Installations"
+            ) {
+                onDismiss()
+                toVersionManageScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_settings_filled,
+                label = stringResource(R.string.versions_manage_settings),
+                enabled = versionValid
+            ) {
+                onDismiss()
+                toVersionSettingsScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_info_outlined,
+                label = "Diagnostics"
+            ) {
+                onDismiss()
+                onOpenDiagnostics()
+            }
+
+            // 切换安装版本（真实版本列表）
+            if (versions.size > 1) {
+                Text(
+                    modifier = Modifier.padding(top = 6.dp),
+                    text = "Switch installation",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.onSurfaceVariant
+                )
+                versions.take(8).forEach { version0 ->
+                    val isSelected = version0 == currentVersion
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .background(
+                                if (isSelected) colorScheme.primary.copy(alpha = 0.16f)
+                                else colorScheme.surfaceContainerHighest.copy(alpha = 0.4f)
+                            )
+                            .clickable(role = Role.Button) {
+                                if (!isSelected) VersionsManager.saveVersion(version0)
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CommonVersionInfoLayout(
+                            modifier = Modifier.weight(1f),
+                            version = version0,
+                            iconSize = 28.dp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Kade'X MC：诊断信息对话框
+ * 仅展示本机已有的信息，不包含账号凭据、令牌或用户名，也不声称做过任何检测
+ */
+@Composable
+private fun KadeDiagnosticsDialog(
+    version: Version?,
+    account: Account?,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val accountType: String? = account?.let { getAccountTypeName(it) }
+    val appVersion = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "unknown"
+    }
+    val report = remember(version, accountType, appVersion) {
+        buildString {
+            appendLine("Kade'X MC diagnostics (information only, no checks were run)")
+            appendLine("App version: $appVersion")
+            appendLine("Package: ${context.packageName}")
+            appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString()}")
+            appendLine("Selected version: ${version?.getVersionName() ?: "none"}")
+            if (version != null && version.isValid()) {
+                appendLine("Version details: ${version.getVersionSummary()}")
+            }
+            append("Account type: ${accountType ?: "none"}")
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Diagnostics") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    text = report,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                clipboard.setText(AnnotatedString(report))
+            }) {
+                Text(text = "Copy")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.generic_cancel))
+            }
+        }
     )
 }
 
@@ -566,6 +814,7 @@ private fun VersionsContent(
     onLaunchGame: (Version?) -> Unit,
     toVersionManageScreen: () -> Unit,
     toVersionSettingsScreen: () -> Unit,
+    toAccountManageScreen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val version by VersionsManager.currentVersion.collectAsStateWithLifecycle()
@@ -573,6 +822,8 @@ private fun VersionsContent(
     val currentAccount by AccountsManager.currentAccountFlow.collectAsStateWithLifecycle()
 
     var showList by remember { mutableStateOf(false) }
+    var showQuickPanel by remember { mutableStateOf(false) }
+    var showDiagnostics by remember { mutableStateOf(false) }
     var versionManagerRow by remember { mutableStateOf<LayoutCoordinates?>(null) }
     Column(modifier = modifier) {
         Box(
@@ -597,6 +848,16 @@ private fun VersionsContent(
                             .fillMaxWidth(),
                         swapToVersionManage = toVersionManageScreen,
                         openListMenu = { showList = true },
+                    )
+                }
+                IconButton(
+                    modifier = Modifier.actionMenuDragExclusion(),
+                    onClick = { showQuickPanel = true }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_dashboard_outlined),
+                        contentDescription = "Quick panel",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 version?.takeIf { !isRefreshing && it.isValid() }?.let {
@@ -662,6 +923,26 @@ private fun VersionsContent(
                     )
                 }
             }
+        }
+
+        if (showQuickPanel) {
+            KadeQuickPanel(
+                currentVersion = version,
+                account = currentAccount,
+                onDismiss = { showQuickPanel = false },
+                onLaunchGame = onLaunchGame,
+                toVersionManageScreen = toVersionManageScreen,
+                toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
+                onOpenDiagnostics = { showDiagnostics = true }
+            )
+        }
+        if (showDiagnostics) {
+            KadeDiagnosticsDialog(
+                version = version,
+                account = currentAccount,
+                onDismiss = { showDiagnostics = false }
+            )
         }
 
         val readinessText: String? = when {
@@ -739,6 +1020,7 @@ private fun ActionMenuCardContent(
                 onLaunchGame = onLaunchGame,
                 toVersionManageScreen = toVersionManageScreen,
                 toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
             )
         }
     }
@@ -815,6 +1097,7 @@ private fun ActionMenuTallerContent(
                 onLaunchGame = onLaunchGame,
                 toVersionManageScreen = toVersionManageScreen,
                 toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
             )
         }
     }
