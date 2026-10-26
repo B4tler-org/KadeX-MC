@@ -401,9 +401,22 @@ object AllSettings : SettingsRegistry() {
     val launcherFestivalEffects = boolSetting("launcherFestivalEffects", true)
 
     /**
+     * KadeX: recent launches from the home screen (version name|timestamp), stored locally
+     */
+    val kadeRecentLaunches = stringListSetting("kadeRecentLaunches", emptyList())
+
+    /**
+     * KadeX: anime style (buttons, backdrop) on the home screen
+     */
+    val kadeAnimeStyle = boolSetting("kadeAnimeStyle", true)
+
+    /**
      * KadeX: Play button glow on the home screen
      */
     val kadePlayGlow = boolSetting("kadePlayGlow", true)
+
+    /** KadeX: previous launcher settings for FPS Booster restore */
+    val kadePerfPrevious = stringSetting("kadePerfPrevious", "")
 
     /**
      * 动画倍速

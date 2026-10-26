@@ -348,6 +348,14 @@ fun LauncherSettingsScreen(
                         summary = "Soft pulsing glow on the Play button. It stays still when animation intensity is 0 or system animations are off."
                     )
 
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
+                        unit = AllSettings.kadeAnimeStyle,
+                        title = "Anime style",
+                        summary = "Anime-style buttons and background on the home screen. Turn off to use the classic Kade'X look."
+                    )
+
                     IntSliderSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
                         position = CardPosition.Middle,

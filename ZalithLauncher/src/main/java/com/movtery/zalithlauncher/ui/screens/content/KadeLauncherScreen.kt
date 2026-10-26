@@ -222,7 +222,8 @@ private fun KadeQuickPanel(
     toVersionManageScreen: () -> Unit,
     toVersionSettingsScreen: () -> Unit,
     toAccountManageScreen: () -> Unit,
-    onOpenDiagnostics: () -> Unit
+    onOpenDiagnostics: () -> Unit,
+    onOpenPerformance: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
