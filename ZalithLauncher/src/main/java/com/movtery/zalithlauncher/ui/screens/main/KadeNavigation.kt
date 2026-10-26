@@ -22,6 +22,8 @@
 
 package com.movtery.zalithlauncher.ui.screens.main
 
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadeAnime
+import androidx.compose.ui.graphics.SolidColor
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -156,6 +158,7 @@ fun <E: TitledNavKey> KadeTopBar(
     changeExpandedState: () -> Unit,
 ) {
     val festivals = LocalFestivals.current
+    val animeStyle = AllSettings.kadeAnimeStyle.state
 
     val inMultiplayerScreen = mainScreenKey is NormalNavKey.Multiplayer
     val inDownloadScreen = mainScreenKey is NestedNavKey.Download
@@ -318,16 +321,26 @@ fun <E: TitledNavKey> KadeTopBar(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.12f),
-                                    Color.White.copy(alpha = 0.04f)
+                            if (animeStyle) {
+                                Brush.horizontalGradient(listOf(KadeAnime.Night, Color(0xFF2A2152)))
+                            } else {
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.12f),
+                                        Color.White.copy(alpha = 0.04f)
+                                    )
                                 )
-                            )
+                            }
                         )
                         .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                            width = if (animeStyle) 2.dp else 1.dp,
+                            brush = if (animeStyle) {
+                                Brush.horizontalGradient(
+                                    listOf(KadeAnime.Sakura, KadeAnime.Violet, KadeAnime.Cyan)
+                                )
+                            } else {
+                                SolidColor(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                            },
                             shape = CircleShape
                         )
                         .padding(horizontal = 4.dp),

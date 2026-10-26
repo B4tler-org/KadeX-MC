@@ -19,6 +19,7 @@
 package com.movtery.zalithlauncher.ui.screens.content
 
 import android.os.Build
+import android.text.format.DateUtils
 import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -76,9 +77,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -113,6 +116,11 @@ import com.movtery.zalithlauncher.game.account.getAccountTypeName
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionsManager
 import com.movtery.zalithlauncher.setting.AllSettings
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeBackdrop
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeButton
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeLabel
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadeAnime
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadePerformanceSheet
 import com.movtery.zalithlauncher.setting.enums.ActionMenuSide
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
@@ -176,7 +184,7 @@ private fun KadeAccountTypeChip(
  * Kade'X MC：快捷面板中的操作行
  */
 @Composable
-private fun KadeQuickAction(
+private fun KadeClassicQuickAction(
     iconRes: Int,
     label: String,
     modifier: Modifier = Modifier,
@@ -223,7 +231,7 @@ private fun KadeQuickPanel(
     toVersionSettingsScreen: () -> Unit,
     toAccountManageScreen: () -> Unit,
     onOpenDiagnostics: () -> Unit,
-    onOpenPerformance: () -> Unit,
+    onOpenPerformance: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -233,6 +241,7 @@ private fun KadeQuickPanel(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = if (AllSettings.kadeAnimeStyle.state) KadeAnime.Night else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
@@ -307,11 +316,79 @@ private fun KadeQuickPanel(
                 toVersionSettingsScreen()
             }
             KadeQuickAction(
+                iconRes = R.drawable.ic_rocket_launch_filled,
+                label = "FPS Booster"
+            ) {
+                onDismiss()
+                onOpenPerformance()
+            }
+            KadeQuickAction(
                 iconRes = R.drawable.ic_info_outlined,
                 label = "Diagnostics"
             ) {
                 onDismiss()
                 onOpenDiagnostics()
+            }
+
+            // 最近启动记录（仅本机保存：版本名 + 启动时间）
+            val recentLaunches = AllSettings.kadeRecentLaunches.state
+            if (recentLaunches.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "Recent launches",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = { AllSettings.kadeRecentLaunches.save(emptyList()) }) {
+                        Text(text = "Clear")
+                    }
+                }
+                recentLaunches.forEach { entry ->
+                    val sep = entry.lastIndexOf('|')
+                    if (sep > 0) {
+                        val name = entry.substring(0, sep)
+                        val time = entry.substring(sep + 1).toLongOrNull() ?: 0L
+                        val installed = versions.firstOrNull { it.getVersionName() == name }
+                        val whenText = remember(time) {
+                            DateUtils.getRelativeTimeSpanString(
+                                time,
+                                System.currentTimeMillis(),
+                                DateUtils.MINUTE_IN_MILLIS
+                            ).toString()
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.large)
+                                .background(colorScheme.surfaceContainerHighest.copy(alpha = 0.4f))
+                                .clickable(enabled = installed != null, role = Role.Button) {
+                                    installed?.let { VersionsManager.saveVersion(it) }
+                                }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .alpha(if (installed != null) 1f else 0.5f),
+                                text = name,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = whenText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             // 切换安装版本（真实版本列表）
@@ -348,6 +425,18 @@ private fun KadeQuickPanel(
             }
         }
     }
+}
+
+/**
+ * Kade'X MC：记录最近的启动请求（最多 5 条，同一版本只保留最新一条）
+ * 只保存“版本名|时间戳”，不记录游戏时长、崩溃或其他会话信息
+ */
+private fun recordKadeLaunch(version: Version?) {
+    if (version == null || !version.isValid()) return
+    val name = version.getVersionName()
+    val entry = "$name|${System.currentTimeMillis()}"
+    val others = AllSettings.kadeRecentLaunches.state.filterNot { it.substringBeforeLast('|') == name }
+    AllSettings.kadeRecentLaunches.save((listOf(entry) + others).take(5))
 }
 
 /**
@@ -411,6 +500,87 @@ private fun KadeDiagnosticsDialog(
 }
 
 /**
+ * Kade'X MC：主启动按钮（根据“动漫风格”设置选择外观）
+ */
+@Composable
+private fun KadePlayButton(
+    version: Version?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (AllSettings.kadeAnimeStyle.state) {
+        AnimeButton(
+            onClick = onClick,
+            modifier = modifier,
+            gradient = KadeAnime.PlayGradient,
+            height = 64.dp
+        ) {
+            Icon(
+                modifier = Modifier.size(30.dp),
+                painter = painterResource(R.drawable.ic_play_arrow_filled),
+                contentDescription = null,
+                tint = Color.White
+            )
+            Column {
+                AnimeLabel(
+                    text = stringResource(R.string.main_launch_game),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                if (version != null && version.isValid()) {
+                    Text(
+                        text = version.getVersionName(),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
+        }
+    } else {
+        KadeClassicPlayButton(version = version, onClick = onClick, modifier = modifier)
+    }
+}
+
+/**
+ * Kade'X MC：快捷面板操作按钮（根据“动漫风格”设置选择外观）
+ */
+@Composable
+private fun KadeQuickAction(
+    iconRes: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    if (AllSettings.kadeAnimeStyle.state) {
+        AnimeButton(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            enabled = enabled,
+            gradient = KadeAnime.ActionGradient,
+            height = 48.dp,
+            sparkle = false
+        ) {
+            Icon(
+                modifier = Modifier.size(22.dp),
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = Color.White
+            )
+            AnimeLabel(text = label, style = MaterialTheme.typography.titleSmall)
+        }
+    } else {
+        KadeClassicQuickAction(
+            iconRes = iconRes,
+            label = label,
+            modifier = modifier,
+            enabled = enabled,
+            onClick = onClick
+        )
+    }
+}
+
+/**
  * Kade'X MC：启动就绪提示
  * 仅基于启动器已有的真实状态（当前版本、当前账号），不阻止启动
  */
@@ -447,7 +617,7 @@ private fun KadeReadinessHint(
  * 渐变 + 呼吸光晕 + 按压缩放，副标题显示当前版本
  */
 @Composable
-private fun KadePlayButton(
+private fun KadeClassicPlayButton(
     version: Version?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -560,6 +730,11 @@ fun KadeLauncherScreen(
     onOpenLink: (String) -> Unit,
     startGuideOnce: (GuideKeys.Keys) -> Unit,
 ) {
+    //记录“从启动器发起”的启动请求（仅保存版本名与时间，保存在本机）
+    val trackedLaunch: (Version?) -> Unit = { version ->
+        recordKadeLaunch(version ?: VersionsManager.currentVersion.value)
+        onLaunchGame(version)
+    }
     LaunchedEffect(Unit) {
         //发起新手引导
         startGuideOnce(GuideKeys.Main)
@@ -589,6 +764,10 @@ fun KadeLauncherScreen(
                     dragState.parentOrigin = coordinates.positionInRoot()
                 }
         ) {
+            if (AllSettings.kadeAnimeStyle.state) {
+                AnimeBackdrop(modifier = Modifier.fillMaxSize())
+            }
+
             val parentWidthPx = constraints.maxWidth.toFloat()
             dragState.parentWidthPx = parentWidthPx
             dragState.outerPaddingPx = with(LocalDensity.current) { ActionMenuOuterPadding.toPx() }
@@ -641,9 +820,7 @@ fun KadeLauncherScreen(
                         .weight(ContentWeight)
                         .offset { IntOffset(x = dragState.previewShift.value.roundToInt(), y = 0) },
                     isVisible = isVisible,
-                    onLaunchGame = { version ->
-                        onLaunchGame(version)
-                    },
+                    onLaunchGame = trackedLaunch,
                     onQuickPlayServer = onQuickPlayServer,
                     onOpenVersionSettings = navigateToVersions
                 )
@@ -675,7 +852,7 @@ fun KadeLauncherScreen(
                         isVisible = isVisible,
                         isTaller = isActionMenuTaller,
                         dockedSide = dockedSide,
-                        onLaunchGame = onLaunchGame,
+                        onLaunchGame = trackedLaunch,
                         swapTargetValue = if (dockedSide == ActionMenuSide.END) 40.dp else (-40).dp,
                         pickUpScale = { dragState.scale },
                         toAccountManageScreen = toAccountManageScreen,
@@ -829,6 +1006,7 @@ private fun VersionsContent(
     var showList by remember { mutableStateOf(false) }
     var showQuickPanel by remember { mutableStateOf(false) }
     var showDiagnostics by remember { mutableStateOf(false) }
+    var showPerformance by remember { mutableStateOf(false) }
     var versionManagerRow by remember { mutableStateOf<LayoutCoordinates?>(null) }
     Column(modifier = modifier) {
         Box(
@@ -939,7 +1117,14 @@ private fun VersionsContent(
                 toVersionManageScreen = toVersionManageScreen,
                 toVersionSettingsScreen = toVersionSettingsScreen,
                 toAccountManageScreen = toAccountManageScreen,
-                onOpenDiagnostics = { showDiagnostics = true }
+                onOpenDiagnostics = { showDiagnostics = true },
+                onOpenPerformance = { showPerformance = true }
+            )
+        }
+        if (showPerformance) {
+            KadePerformanceSheet(
+                version = version,
+                onDismiss = { showPerformance = false }
             )
         }
         if (showDiagnostics) {

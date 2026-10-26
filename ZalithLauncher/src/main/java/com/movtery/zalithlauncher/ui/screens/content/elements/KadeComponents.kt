@@ -18,6 +18,9 @@
 
 package com.movtery.zalithlauncher.ui.screens.content.elements
 
+import com.movtery.zalithlauncher.setting.AllSettings
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -82,23 +85,28 @@ fun KadeVersionItemLayout(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.large
+    val anime = AllSettings.kadeAnimeStyle.state
 
     val borderColor by animateColorAsState(
         targetValue = if (selected) {
-            colorScheme.primary
+            if (anime) KadeAnime.Sakura else colorScheme.primary
         } else {
-            colorScheme.outlineVariant.copy(alpha = 0.35f)
+            if (anime) KadeAnime.Violet.copy(alpha = 0.6f) else colorScheme.outlineVariant.copy(alpha = 0.35f)
         },
         label = "KadeVersionBorder"
     )
     val baseColor = cardColor()
-    val cardTint = if (selected) lerp(baseColor, colorScheme.primary, 0.14f) else baseColor
+    val cardTint = if (selected) {
+        lerp(baseColor, if (anime) KadeAnime.Sakura else colorScheme.primary, 0.14f)
+    } else {
+        baseColor
+    }
 
     Box(
         modifier = modifier
             .clip(shape)
             .border(
-                width = if (selected) 2.dp else 1.dp,
+                width = if (anime) 3.dp else if (selected) 2.dp else 1.dp,
                 color = borderColor,
                 shape = shape
             )
@@ -125,7 +133,7 @@ fun KadeVersionItemLayout(
                     .width(4.dp)
                     .height(28.dp)
                     .clip(RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp))
-                    .background(colorScheme.primary)
+                    .background(if (anime) KadeAnime.Sakura else colorScheme.primary)
             )
         }
     }
@@ -146,13 +154,18 @@ fun KadeTaskItem(
     onCancelClick: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val anime = AllSettings.kadeAnimeStyle.state
 
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         color = color,
         contentColor = contentColor,
-        border = BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.18f))
+        border = if (anime) {
+            BorderStroke(2.dp, KadeAnime.Violet.copy(alpha = 0.7f))
+        } else {
+            BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.18f))
+        }
     ) {
         Row(
             modifier = Modifier.padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
@@ -178,7 +191,7 @@ fun KadeTaskItem(
                 if (taskProgress < 0) { //负数则代表不确定
                     LinearProgressIndicator(
                         modifier = barModifier,
-                        color = colorScheme.primary,
+                        color = if (anime) KadeAnime.Sakura else colorScheme.primary,
                         trackColor = colorScheme.surfaceContainerHighest,
                         strokeCap = StrokeCap.Round
                     )
@@ -187,13 +200,36 @@ fun KadeTaskItem(
                         targetValue = taskProgress.coerceIn(0f, 1f),
                         label = "KadeTaskProgress"
                     )
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = barModifier,
-                        color = colorScheme.primary,
-                        trackColor = colorScheme.surfaceContainerHighest,
-                        strokeCap = StrokeCap.Round
-                    )
+                    if (anime) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(14.dp)
+                                .clip(CircleShape)
+                                .background(KadeAnime.Night)
+                                .border(2.dp, KadeAnime.Outline, CircleShape)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(animatedProgress)
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            listOf(KadeAnime.Sakura, KadeAnime.Violet)
+                                        )
+                                    )
+                            )
+                        }
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = barModifier,
+                            color = colorScheme.primary,
+                            trackColor = colorScheme.surfaceContainerHighest,
+                            strokeCap = StrokeCap.Round
+                        )
+                    }
                 }
 
                 Row(
@@ -206,7 +242,7 @@ fun KadeTaskItem(
                             text = "${(progress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = colorScheme.primary
+                            color = if (anime) KadeAnime.Gold else colorScheme.primary
                         )
                     }
                     rateBytesPerSec?.let { bytes ->
@@ -227,7 +263,10 @@ fun KadeTaskItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(colorScheme.surfaceContainerHighest),
+                    .background(if (anime) KadeAnime.Sakura else colorScheme.surfaceContainerHighest)
+                    .then(
+                        if (anime) Modifier.border(2.dp, KadeAnime.Outline, CircleShape) else Modifier
+                    ),
                 onClick = onCancelClick
             ) {
                 Icon(

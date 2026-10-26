@@ -22,6 +22,10 @@
 
 package com.movtery.zalithlauncher.ui.screens.content.settings
 
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadeAnime
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeLabel
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeButton
+import com.movtery.zalithlauncher.setting.AllSettings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -153,11 +157,22 @@ fun KadeAboutInfoScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Button(
-                        modifier = Modifier.padding(top = 14.dp),
-                        onClick = { openLink(URL_KADEX_PROJECT) }
-                    ) {
-                        Text(text = stringResource(R.string.about_launcher_project_link))
+                    if (AllSettings.kadeAnimeStyle.state) {
+                        AnimeButton(
+                            modifier = Modifier.padding(top = 14.dp),
+                            height = 46.dp,
+                            sparkle = false,
+                            onClick = { openLink(URL_KADEX_PROJECT) }
+                        ) {
+                            AnimeLabel(text = stringResource(R.string.about_launcher_project_link))
+                        }
+                    } else {
+                        Button(
+                            modifier = Modifier.padding(top = 14.dp),
+                            onClick = { openLink(URL_KADEX_PROJECT) }
+                        ) {
+                            Text(text = stringResource(R.string.about_launcher_project_link))
+                        }
                     }
                 }
             }
@@ -175,10 +190,14 @@ fun KadeAboutInfoScreen(
                                 .clip(CircleShape)
                                 .background(
                                     Brush.linearGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        )
+                                        if (AllSettings.kadeAnimeStyle.state) {
+                                            KadeAnime.PlayGradient
+                                        } else {
+                                            listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            )
+                                        }
                                     )
                                 ),
                             contentAlignment = Alignment.Center
@@ -353,6 +372,7 @@ private fun GlassCard(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(28.dp)
+    val anime = AllSettings.kadeAnimeStyle.state
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -367,14 +387,24 @@ private fun GlassCard(
                 )
             )
             .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    listOf(
-                        colorScheme.primary.copy(alpha = 0.55f),
-                        Color.White.copy(alpha = 0.12f),
-                        colorScheme.primary.copy(alpha = 0.25f)
+                width = if (anime) 2.dp else 1.dp,
+                brush = if (anime) {
+                    Brush.linearGradient(
+                        listOf(
+                            KadeAnime.Sakura.copy(alpha = 0.85f),
+                            KadeAnime.Violet.copy(alpha = 0.55f),
+                            KadeAnime.Cyan.copy(alpha = 0.7f)
+                        )
                     )
-                ),
+                } else {
+                    Brush.linearGradient(
+                        listOf(
+                            colorScheme.primary.copy(alpha = 0.55f),
+                            Color.White.copy(alpha = 0.12f),
+                            colorScheme.primary.copy(alpha = 0.25f)
+                        )
+                    )
+                },
                 shape = shape
             )
             .padding(18.dp),
@@ -389,7 +419,7 @@ private fun GlassTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary
+        color = if (AllSettings.kadeAnimeStyle.state) KadeAnime.Sakura else MaterialTheme.colorScheme.primary
     )
 }
 
