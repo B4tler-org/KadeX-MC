@@ -1,0 +1,1433 @@
+/*
+ * Zalith Launcher 2
+ * Copyright (C) 2025 MovTery <movtery228@qq.com> and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
+ */
+
+package com.movtery.zalithlauncher.ui.screens.content
+
+import android.os.Build
+import android.text.format.DateUtils
+import android.provider.Settings
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.movtery.cardgrid.state.rememberCardGridState
+import com.movtery.guide.GuideSide
+import com.movtery.guide.guideNode
+import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.account.Account
+import com.movtery.zalithlauncher.game.account.AccountsManager
+import com.movtery.zalithlauncher.game.account.getAccountTypeName
+import com.movtery.zalithlauncher.game.version.installed.Version
+import com.movtery.zalithlauncher.game.version.installed.VersionsManager
+import com.movtery.zalithlauncher.setting.AllSettings
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeBackdrop
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeButton
+import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeLabel
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadeAnime
+import com.movtery.zalithlauncher.ui.screens.content.elements.KadePerformanceSheet
+import com.movtery.zalithlauncher.setting.enums.ActionMenuSide
+import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.BackgroundCard
+import com.movtery.zalithlauncher.ui.components.MarqueeText
+import com.movtery.zalithlauncher.ui.components.SkinPreview3D
+import com.movtery.zalithlauncher.ui.guide.GuideKeys
+import com.movtery.zalithlauncher.ui.screens.NestedNavKey
+import com.movtery.zalithlauncher.ui.screens.NormalNavKey
+import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoLayout
+import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
+import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
+import com.movtery.zalithlauncher.ui.screens.content.home.HomeGrid
+import com.movtery.zalithlauncher.ui.screens.content.home.LocalActionMenuDrag
+import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragAnchor
+import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragExclusion
+import com.movtery.zalithlauncher.ui.screens.content.home.rememberActionMenuDragState
+import com.movtery.zalithlauncher.ui.screens.content.home.server.LocalServerCardQuickPlay
+import com.movtery.zalithlauncher.ui.screens.content.home.version.LocalHomeCardLauncher
+import com.movtery.zalithlauncher.ui.screens.content.home.version.LocalHomeCardVersionSettings
+import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
+import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import kotlin.math.roundToInt
+
+private const val ContentWeight = 7f
+private const val ActionMenuWeight = 3f
+
+/**
+ * 操作菜单停泊槽位与屏幕边缘的间距
+ */
+private val ActionMenuOuterPadding = 12.dp
+
+/**
+ * Kade'X MC：卡片统一的翡翠描边
+ */
+@Composable
+private fun kadeCardBorder(): BorderStroke =
+    BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+
+/**
+ * Kade'X MC：账号类型小标签
+ */
+@Composable
+private fun KadeAccountTypeChip(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f))
+            .padding(horizontal = 10.dp, vertical = 2.dp),
+        text = text,
+        maxLines = 1,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onPrimaryContainer
+    )
+}
+
+
+/**
+ * Kade'X MC：快捷面板中的操作行
+ */
+@Composable
+private fun KadeClassicQuickAction(
+    iconRes: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(22.dp),
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = if (enabled) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.38f)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = if (enabled) colorScheme.onSurface else colorScheme.onSurface.copy(alpha = 0.38f)
+        )
+    }
+}
+
+/**
+ * Kade'X MC：快捷面板（Quick Panel）
+ * 所有操作都直接调用启动器已有的功能，不在这里复制任何业务逻辑
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KadeQuickPanel(
+    currentVersion: Version?,
+    account: Account?,
+    onDismiss: () -> Unit,
+    onLaunchGame: (Version?) -> Unit,
+    toVersionManageScreen: () -> Unit,
+    toVersionSettingsScreen: () -> Unit,
+    toAccountManageScreen: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
+    onOpenPerformance: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val versions by VersionsManager.versions.collectAsStateWithLifecycle()
+    val versionValid = currentVersion?.isValid() == true
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = if (AllSettings.kadeAnimeStyle.state) KadeAnime.Night else MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Quick panel",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            // 当前状态摘要
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(colorScheme.primary.copy(alpha = 0.10f))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = currentVersion?.getVersionName()
+                        ?: stringResource(R.string.versions_manage_no_versions),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (versionValid) {
+                    Text(
+                        text = currentVersion?.getVersionSummary().orEmpty(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = account?.username ?: stringResource(R.string.account_add_new_account),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
+
+            KadeQuickAction(
+                iconRes = R.drawable.ic_play_arrow_filled,
+                label = stringResource(R.string.main_launch_game)
+            ) {
+                onDismiss()
+                onLaunchGame(null)
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_person_outlined,
+                label = "Accounts"
+            ) {
+                onDismiss()
+                toAccountManageScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_folder_outlined,
+                label = "Installations"
+            ) {
+                onDismiss()
+                toVersionManageScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_settings_filled,
+                label = stringResource(R.string.versions_manage_settings),
+                enabled = versionValid
+            ) {
+                onDismiss()
+                toVersionSettingsScreen()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_rocket_launch_filled,
+                label = "FPS Booster"
+            ) {
+                onDismiss()
+                onOpenPerformance()
+            }
+            KadeQuickAction(
+                iconRes = R.drawable.ic_info_outlined,
+                label = "Diagnostics"
+            ) {
+                onDismiss()
+                onOpenDiagnostics()
+            }
+
+            // 最近启动记录（仅本机保存：版本名 + 启动时间）
+            val recentLaunches = AllSettings.kadeRecentLaunches.state
+            if (recentLaunches.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "Recent launches",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = { AllSettings.kadeRecentLaunches.save(emptyList()) }) {
+                        Text(text = "Clear")
+                    }
+                }
+                recentLaunches.forEach { entry ->
+                    val sep = entry.lastIndexOf('|')
+                    if (sep > 0) {
+                        val name = entry.substring(0, sep)
+                        val time = entry.substring(sep + 1).toLongOrNull() ?: 0L
+                        val installed = versions.firstOrNull { it.getVersionName() == name }
+                        val whenText = remember(time) {
+                            DateUtils.getRelativeTimeSpanString(
+                                time,
+                                System.currentTimeMillis(),
+                                DateUtils.MINUTE_IN_MILLIS
+                            ).toString()
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.large)
+                                .background(colorScheme.surfaceContainerHighest.copy(alpha = 0.4f))
+                                .clickable(enabled = installed != null, role = Role.Button) {
+                                    installed?.let { VersionsManager.saveVersion(it) }
+                                }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .alpha(if (installed != null) 1f else 0.5f),
+                                text = name,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = whenText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 切换安装版本（真实版本列表）
+            if (versions.size > 1) {
+                Text(
+                    modifier = Modifier.padding(top = 6.dp),
+                    text = "Switch installation",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.onSurfaceVariant
+                )
+                versions.take(8).forEach { version0 ->
+                    val isSelected = version0 == currentVersion
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .background(
+                                if (isSelected) colorScheme.primary.copy(alpha = 0.16f)
+                                else colorScheme.surfaceContainerHighest.copy(alpha = 0.4f)
+                            )
+                            .clickable(role = Role.Button) {
+                                if (!isSelected) VersionsManager.saveVersion(version0)
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CommonVersionInfoLayout(
+                            modifier = Modifier.weight(1f),
+                            version = version0,
+                            iconSize = 28.dp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Kade'X MC：记录最近的启动请求（最多 5 条，同一版本只保留最新一条）
+ * 只保存“版本名|时间戳”，不记录游戏时长、崩溃或其他会话信息
+ */
+internal fun recordKadeLaunch(version: Version?) {
+    if (version == null || !version.isValid()) return
+    val name = version.getVersionName()
+    val entry = "$name|${System.currentTimeMillis()}"
+    val others = AllSettings.kadeRecentLaunches.state.filterNot { it.substringBeforeLast('|') == name }
+    AllSettings.kadeRecentLaunches.save((listOf(entry) + others).take(5))
+}
+
+/**
+ * Kade'X MC：诊断信息对话框
+ * 仅展示本机已有的信息，不包含账号凭据、令牌或用户名，也不声称做过任何检测
+ */
+@Composable
+private fun KadeDiagnosticsDialog(
+    version: Version?,
+    account: Account?,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val accountType: String? = account?.let { getAccountTypeName(it) }
+    val appVersion = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "unknown"
+    }
+    val report = remember(version, accountType, appVersion) {
+        buildString {
+            appendLine("Kade'X MC diagnostics (information only, no checks were run)")
+            appendLine("App version: $appVersion")
+            appendLine("Package: ${context.packageName}")
+            appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString()}")
+            appendLine("Selected version: ${version?.getVersionName() ?: "none"}")
+            if (version != null && version.isValid()) {
+                appendLine("Version details: ${version.getVersionSummary()}")
+            }
+            append("Account type: ${accountType ?: "none"}")
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Diagnostics") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    text = report,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                clipboard.setText(AnnotatedString(report))
+            }) {
+                Text(text = "Copy")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.generic_cancel))
+            }
+        }
+    )
+}
+
+/**
+ * Kade'X MC：主启动按钮（根据“动漫风格”设置选择外观）
+ */
+@Composable
+private fun KadePlayButton(
+    version: Version?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (AllSettings.kadeAnimeStyle.state) {
+        AnimeButton(
+            onClick = onClick,
+            modifier = modifier,
+            gradient = KadeAnime.PlayGradient,
+            height = 64.dp
+        ) {
+            Icon(
+                modifier = Modifier.size(30.dp),
+                painter = painterResource(R.drawable.ic_play_arrow_filled),
+                contentDescription = null,
+                tint = Color.White
+            )
+            Column {
+                AnimeLabel(
+                    text = stringResource(R.string.main_launch_game),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                if (version != null && version.isValid()) {
+                    Text(
+                        text = version.getVersionName(),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
+        }
+    } else {
+        KadeClassicPlayButton(version = version, onClick = onClick, modifier = modifier)
+    }
+}
+
+/**
+ * Kade'X MC：快捷面板操作按钮（根据“动漫风格”设置选择外观）
+ */
+@Composable
+private fun KadeQuickAction(
+    iconRes: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    if (AllSettings.kadeAnimeStyle.state) {
+        AnimeButton(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            enabled = enabled,
+            gradient = KadeAnime.ActionGradient,
+            height = 48.dp,
+            sparkle = false
+        ) {
+            Icon(
+                modifier = Modifier.size(22.dp),
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = Color.White
+            )
+            AnimeLabel(text = label, style = MaterialTheme.typography.titleSmall)
+        }
+    } else {
+        KadeClassicQuickAction(
+            iconRes = iconRes,
+            label = label,
+            modifier = modifier,
+            enabled = enabled,
+            onClick = onClick
+        )
+    }
+}
+
+/**
+ * Kade'X MC：启动就绪提示
+ * 仅基于启动器已有的真实状态（当前版本、当前账号），不阻止启动
+ */
+@Composable
+private fun KadeReadinessHint(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(18.dp),
+            painter = painterResource(R.drawable.ic_warning_outlined),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.tertiary
+        )
+        Text(
+            text = text,
+            maxLines = 1,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+/**
+ * Kade'X MC：主启动按钮
+ * 渐变 + 呼吸光晕 + 按压缩放，副标题显示当前版本
+ */
+@Composable
+private fun KadeClassicPlayButton(
+    version: Version?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(24.dp)
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        label = "KadePlayScale"
+    )
+
+    val context = LocalContext.current
+    val systemAnimationsOff = remember {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+    //Appearance：Play 按钮光晕开关，并跟随启动器的“动画幅度”设置（为 0 时静止）
+    val glowEnabled = AllSettings.kadePlayGlow.state
+    val animationExtent = AllSettings.launcherAnimateExtent.state
+    val reduceMotion = systemAnimationsOff || !glowEnabled || animationExtent == 0
+    val glow: Float = if (reduceMotion) {
+        if (glowEnabled) 0.6f else 0.2f
+    } else {
+        val glowTransition = rememberInfiniteTransition(label = "KadePlayGlow")
+        val animatedGlow by glowTransition.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 0.9f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "KadePlayGlowAlpha"
+        )
+        animatedGlow
+    }
+
+    val brush = Brush.horizontalGradient(
+        colors = listOf(
+            colorScheme.primary,
+            lerp(colorScheme.primary, colorScheme.secondary, 0.6f)
+        )
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .height(64.dp)
+            .shadow(
+                elevation = 14.dp,
+                shape = shape,
+                ambientColor = colorScheme.primary.copy(alpha = glow),
+                spotColor = colorScheme.primary.copy(alpha = glow)
+            )
+            .clip(shape)
+            .background(brush)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                modifier = Modifier.size(32.dp),
+                painter = painterResource(R.drawable.ic_play_arrow_filled),
+                contentDescription = null,
+                tint = colorScheme.onPrimary
+            )
+            Column(horizontalAlignment = Alignment.Start) {
+                MarqueeText(
+                    text = stringResource(R.string.main_launch_game),
+                    color = colorScheme.onPrimary,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                if (version != null && version.isValid()) {
+                    Text(
+                        text = version.getVersionName(),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = colorScheme.onPrimary.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun KadeLauncherScreen(
+    backStackViewModel: ScreenBackStackViewModel,
+    navigateToVersions: (Version) -> Unit,
+    onLaunchGame: (Version?) -> Unit,
+    onQuickPlayServer: (Version?, String) -> Unit,
+    onOpenLink: (String) -> Unit,
+    startGuideOnce: (GuideKeys.Keys) -> Unit,
+) {
+    //新的主页仪表盘（可在设置中关闭，关闭后使用原有主页）
+    if (AllSettings.kadeDashboard.state) {
+        KadeHomeScreen(
+            backStackViewModel = backStackViewModel,
+            navigateToVersions = navigateToVersions,
+            onLaunchGame = onLaunchGame,
+            onQuickPlayServer = onQuickPlayServer,
+            onOpenLink = onOpenLink,
+            startGuideOnce = startGuideOnce
+        )
+        return
+    }
+
+    //记录“从启动器发起”的启动请求（仅保存版本名与时间，保存在本机）
+    val trackedLaunch: (Version?) -> Unit = { version ->
+        recordKadeLaunch(version ?: VersionsManager.currentVersion.value)
+        onLaunchGame(version)
+    }
+    LaunchedEffect(Unit) {
+        //发起新手引导
+        startGuideOnce(GuideKeys.Main)
+    }
+
+    BaseScreen(
+        screenKey = NormalNavKey.LauncherMain,
+        currentKey = backStackViewModel.mainScreen.currentKey
+    ) { isVisible ->
+        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val dockedSide = AllSettings.launcherActionMenuSide.state
+        val dragState = rememberActionMenuDragState(
+            onCommit = { side -> AllSettings.launcherActionMenuSide.save(side) }
+        )
+        dragState.dockedSide = dockedSide
+        dragState.isRtl = isRtl
+
+        LaunchedEffect(isVisible) {
+            //屏幕切走时打断进行中的拖拽
+            if (!isVisible) dragState.onDragCancel()
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .onGloballyPositioned { coordinates ->
+                    dragState.parentOrigin = coordinates.positionInRoot()
+                }
+        ) {
+            if (AllSettings.kadeAnimeStyle.state) {
+                AnimeBackdrop(modifier = Modifier.fillMaxSize())
+            }
+
+            val parentWidthPx = constraints.maxWidth.toFloat()
+            dragState.parentWidthPx = parentWidthPx
+            dragState.outerPaddingPx = with(LocalDensity.current) { ActionMenuOuterPadding.toPx() }
+            dragState.menuSpanPx = parentWidthPx * (ActionMenuWeight / (ActionMenuWeight + ContentWeight))
+
+            //拖拽期间以预览侧为准
+            val effectiveSide = dragState.previewSide ?: dockedSide
+
+            //卡片尺寸与停泊槽内容区保持一致
+            val cardWidth = maxWidth * (ActionMenuWeight / (ActionMenuWeight + ContentWeight)) - ActionMenuOuterPadding
+            val cardHeight = maxHeight - ActionMenuOuterPadding * 2
+
+            val toAccountManageScreen: () -> Unit = {
+                backStackViewModel.mainScreen.navigateTo(
+                    screenKey = NormalNavKey.AccountManager(FirstLoginMenu.NONE)
+                )
+            }
+            val toVersionManageScreen: () -> Unit = {
+                backStackViewModel.mainScreen.removeAndNavigateTo(
+                    remove = NestedNavKey.VersionSettings::class,
+                    screenKey = NormalNavKey.VersionsManager
+                )
+            }
+            val toVersionSettingsScreen: () -> Unit = {
+                VersionsManager.currentVersion.value?.let { version ->
+                    navigateToVersions(version)
+                }
+            }
+
+            // 内容区域
+            Row(modifier = Modifier.fillMaxSize()) {
+                // ActionMenu 对接到了 Start，留出空位
+                if (dockedSide == ActionMenuSide.START) {
+                    Spacer(modifier = Modifier.weight(ActionMenuWeight))
+                }
+
+                CompositionLocalProvider(
+                    LocalUriHandler provides object : UriHandler {
+                        override fun openUri(uri: String) {
+                            onOpenLink(uri)
+                        }
+                    }
+                ) {
+                ContentMenu(
+                    modifier = Modifier
+                        .guideNode(
+                            key = GuideKeys.Main.Step.CardTip,
+                            holeRadius = 0.dp
+                        )
+                        .weight(ContentWeight)
+                        .offset { IntOffset(x = dragState.previewShift.value.roundToInt(), y = 0) },
+                    isVisible = isVisible,
+                    onLaunchGame = trackedLaunch,
+                    onQuickPlayServer = onQuickPlayServer,
+                    onOpenVersionSettings = navigateToVersions
+                )
+                }
+
+                // ActionMenu 对接到了 End，留出空位
+                if (dockedSide == ActionMenuSide.END) {
+                    Spacer(modifier = Modifier.weight(ActionMenuWeight))
+                }
+            }
+
+            val isActionMenuTaller = maxHeight >= 600.dp
+            CompositionLocalProvider(LocalActionMenuDrag provides dragState) {
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            val translation = if (dragState.floating) {
+                                dragState.cardPosition
+                            } else {
+                                dragState.landingOf(effectiveSide) + dragState.settleOffset.value
+                            }
+                            val x = if (isRtl) parentWidthPx - cardWidth.toPx() - translation.x else translation.x
+                            IntOffset(x.roundToInt(), translation.y.roundToInt())
+                        }
+                        .size(cardWidth, cardHeight)
+                ) {
+                    ActionMenu(
+                        modifier = Modifier.fillMaxSize(),
+                        isVisible = isVisible,
+                        isTaller = isActionMenuTaller,
+                        dockedSide = dockedSide,
+                        onLaunchGame = trackedLaunch,
+                        swapTargetValue = if (dockedSide == ActionMenuSide.END) 40.dp else (-40).dp,
+                        pickUpScale = { dragState.scale },
+                        toAccountManageScreen = toAccountManageScreen,
+                        toVersionManageScreen = toVersionManageScreen,
+                        toVersionSettingsScreen = toVersionSettingsScreen
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContentMenu(
+    isVisible: Boolean,
+    onLaunchGame: (Version) -> Unit,
+    onQuickPlayServer: (Version?, String) -> Unit,
+    onOpenVersionSettings: (Version) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val yOffset by swapAnimateDpAsState(
+        targetValue = (-40).dp,
+        swapIn = isVisible
+    )
+    val gridState = rememberCardGridState()
+
+    CompositionLocalProvider(
+        LocalHomeCardLauncher provides onLaunchGame,
+        LocalHomeCardVersionSettings provides onOpenVersionSettings,
+        LocalServerCardQuickPlay provides onQuickPlayServer
+    ) {
+        HomeGrid(
+            state = gridState,
+            isVisible = isVisible,
+            modifier = modifier
+                .fillMaxSize()
+                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+        )
+    }
+}
+
+@Composable
+private fun AccountAvatarCenter(
+    modifier: Modifier = Modifier,
+    account: Account?,
+    refreshKey: Any? = null,
+    onClick: () -> Unit = {}
+) {
+    Box(
+        modifier = modifier
+            .clip(shape = MaterialTheme.shapes.extraLarge)
+            .clickable(onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier.padding(all = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (account != null) {
+                PlayerFace(
+                    modifier = Modifier
+                        .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+                        .padding(2.dp),
+                    account = account,
+                    avatarSize = 64.dp,
+                    refreshKey = refreshKey
+                )
+            } else {
+                Icon(
+                    modifier = Modifier.size(40.dp),
+                    painter = painterResource(R.drawable.ic_add),
+                    contentDescription = null
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = account?.username ?: stringResource(R.string.account_add_new_account),
+                    maxLines = 1,
+                    style = MaterialTheme.typography.titleSmall
+                )
+                if (account != null) {
+                    KadeAccountTypeChip(
+                        modifier = Modifier.padding(top = 4.dp),
+                        text = getAccountTypeName(account)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountAvatarRow(
+    modifier: Modifier = Modifier,
+    account: Account?,
+    refreshKey: Any? = null,
+) {
+    Row(
+        modifier = modifier.padding(all = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (account != null) {
+            PlayerFace(
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                    .padding(2.dp),
+                account = account,
+                avatarSize = 48.dp,
+                refreshKey = refreshKey
+            )
+        } else {
+            Icon(
+                modifier = Modifier.size(40.dp),
+                painter = painterResource(R.drawable.ic_add),
+                contentDescription = null
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = account?.username ?: stringResource(R.string.account_add_new_account),
+                maxLines = 1,
+                style = MaterialTheme.typography.titleSmall
+            )
+            if (account != null) {
+                KadeAccountTypeChip(text = getAccountTypeName(account))
+            }
+        }
+    }
+}
+
+@Composable
+private fun VersionsContent(
+    onLaunchGame: (Version?) -> Unit,
+    toVersionManageScreen: () -> Unit,
+    toVersionSettingsScreen: () -> Unit,
+    toAccountManageScreen: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val version by VersionsManager.currentVersion.collectAsStateWithLifecycle()
+    val isRefreshing by VersionsManager.isRefreshing.collectAsStateWithLifecycle()
+    val currentAccount by AccountsManager.currentAccountFlow.collectAsStateWithLifecycle()
+
+    var showList by remember { mutableStateOf(false) }
+    var showQuickPanel by remember { mutableStateOf(false) }
+    var showDiagnostics by remember { mutableStateOf(false) }
+    var showPerformance by remember { mutableStateOf(false) }
+    var versionManagerRow by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    Column(modifier = modifier) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .onGloballyPositioned { coordinates ->
+                            versionManagerRow = coordinates
+                        }
+                ) {
+                    VersionManagerLayout(
+                        isRefreshing = isRefreshing,
+                        version = version,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        swapToVersionManage = toVersionManageScreen,
+                        openListMenu = { showList = true },
+                    )
+                }
+                IconButton(
+                    modifier = Modifier.actionMenuDragExclusion(),
+                    onClick = { showQuickPanel = true }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_dashboard_outlined),
+                        contentDescription = "Quick panel",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                version?.takeIf { !isRefreshing && it.isValid() }?.let {
+                    IconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = toVersionSettingsScreen
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings_filled),
+                            contentDescription = stringResource(R.string.versions_manage_settings)
+                        )
+                    }
+                }
+            }
+
+            val menuAnchor = versionManagerRow
+            val menuAnchorBounds = menuAnchor?.boundsInParent()
+            val menuAnchorX = menuAnchorBounds?.left ?: 0f
+            val menuAnchorHeight = menuAnchorBounds?.height ?: 0f
+
+            DropdownMenu(
+                expanded = showList && menuAnchor != null,
+                onDismissRequest = { showList = false },
+                modifier = Modifier.width(260.dp),
+                offset = DpOffset(
+                    x = with(LocalDensity.current) { menuAnchorX.toDp() },
+                    y = with(LocalDensity.current) { (-menuAnchorHeight).toDp() } - 8.dp
+                ),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                val versions by VersionsManager.versions.collectAsStateWithLifecycle()
+                versions.forEach { version0 ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CommonVersionInfoLayout(
+                                    modifier = Modifier.weight(1f),
+                                    version = version0,
+                                    iconSize = 28.dp
+                                )
+                                IconButton(
+                                    onClick = {
+                                        onLaunchGame(version0)
+                                        showList = false
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_play_arrow_filled),
+                                        contentDescription = stringResource(R.string.main_launch_game),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            if (version == version0) return@DropdownMenuItem
+                            VersionsManager.saveVersion(version0)
+                            showList = false
+                        }
+                    )
+                }
+            }
+        }
+
+        if (showQuickPanel) {
+            KadeQuickPanel(
+                currentVersion = version,
+                account = currentAccount,
+                onDismiss = { showQuickPanel = false },
+                onLaunchGame = onLaunchGame,
+                toVersionManageScreen = toVersionManageScreen,
+                toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
+                onOpenDiagnostics = { showDiagnostics = true },
+                onOpenPerformance = { showPerformance = true }
+            )
+        }
+        if (showPerformance) {
+            KadePerformanceSheet(
+                version = version,
+                onDismiss = { showPerformance = false }
+            )
+        }
+        if (showDiagnostics) {
+            KadeDiagnosticsDialog(
+                version = version,
+                account = currentAccount,
+                onDismiss = { showDiagnostics = false }
+            )
+        }
+
+        val readinessText: String? = when {
+            isRefreshing -> null
+            version == null -> stringResource(R.string.versions_manage_no_versions)
+            currentAccount == null -> stringResource(R.string.account_add_new_account)
+            else -> null
+        }
+        if (readinessText != null) {
+            KadeReadinessHint(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(PaddingValues(horizontal = 12.dp))
+                    .padding(bottom = 8.dp),
+                text = readinessText
+            )
+        }
+
+        KadePlayButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(PaddingValues(horizontal = 12.dp))
+                .padding(bottom = 12.dp),
+            version = version,
+            onClick = {
+                onLaunchGame(null)
+            }
+        )
+    }
+}
+
+@Composable
+private fun ActionMenuCardContent(
+    modifier: Modifier = Modifier,
+    account: Account?,
+    onLaunchGame: (Version?) -> Unit,
+    toAccountManageScreen: () -> Unit,
+    toVersionManageScreen: () -> Unit,
+    toVersionSettingsScreen: () -> Unit,
+) {
+    BackgroundCard(
+        modifier = Modifier
+            .actionMenuDragAnchor()
+            .guideNode(GuideKeys.Main.Step.CardDrag)
+            .then(modifier),
+        shape = MaterialTheme.shapes.extraLarge,
+        border = kadeCardBorder()
+    ) {
+        ConstraintLayout(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val (accountAvatar, versionManagerLayout) = createRefs()
+
+            AccountAvatarCenter(
+                modifier = Modifier
+                    .constrainAs(accountAvatar) {
+                        top.linkTo(parent.top)
+                        bottom.linkTo(versionManagerLayout.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    }.guideNode(
+                        key = GuideKeys.Main.Step.Account,
+                        preferSide = GuideSide.Below
+                    ),
+                account = account,
+                onClick = toAccountManageScreen
+            )
+
+            VersionsContent(
+                modifier = Modifier.constrainAs(versionManagerLayout) {
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                },
+                onLaunchGame = onLaunchGame,
+                toVersionManageScreen = toVersionManageScreen,
+                toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionMenuTallerContent(
+    modifier: Modifier = Modifier,
+    account: Account?,
+    dockedSide: ActionMenuSide,
+    onLaunchGame: (Version?) -> Unit,
+    toAccountManageScreen: () -> Unit,
+    toVersionManageScreen: () -> Unit,
+    toVersionSettingsScreen: () -> Unit,
+) {
+    val refreshWardrobe by AccountsManager.refreshWardrobe.collectAsStateWithLifecycle()
+    val skinFile = remember(account, refreshWardrobe) {
+        account?.getSkinFile()?.takeIf { it.exists() }
+    }
+    val capeFile = remember(account, refreshWardrobe) {
+        account?.getCapeFile()?.takeIf { it.exists() }
+    }
+
+    Column(
+        modifier = Modifier
+            .actionMenuDragAnchor()
+            .guideNode(
+                key = GuideKeys.Main.Step.CardDrag,
+                holeRadius = 0.dp,
+            )
+            .then(modifier),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val azimuth = (if (dockedSide == ActionMenuSide.START) -35 else 35) * (if (isRtl) -1 else 1)
+
+        SkinPreview3D(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            skinFile = skinFile,
+            capeFile = capeFile,
+            modelType = account?.skinModelType,
+            interactionEnabled = false,
+            azimuth = azimuth,
+            refreshKey = listOf(account?.uniqueUUID, refreshWardrobe, skinFile?.lastModified() ?: 0L, capeFile?.lastModified() ?: 0L)
+        )
+
+        BackgroundCard(
+            modifier = Modifier
+                .guideNode(
+                    key = GuideKeys.Main.Step.Account,
+                    preferSide = GuideSide.Above,
+                    holeRadius = 28.dp
+                )
+                .fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            border = kadeCardBorder(),
+            onClick = toAccountManageScreen
+        ) {
+            AccountAvatarRow(
+                modifier = Modifier.fillMaxWidth(),
+                account = account,
+            )
+        }
+
+        BackgroundCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            border = kadeCardBorder()
+        ) {
+            VersionsContent(
+                modifier = Modifier.fillMaxWidth(),
+                onLaunchGame = onLaunchGame,
+                toVersionManageScreen = toVersionManageScreen,
+                toVersionSettingsScreen = toVersionSettingsScreen,
+                toAccountManageScreen = toAccountManageScreen,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionMenu(
+    isVisible: Boolean,
+    isTaller: Boolean,
+    dockedSide: ActionMenuSide,
+    onLaunchGame: (Version?) -> Unit,
+    swapTargetValue: Dp,
+    pickUpScale: () -> Float,
+    modifier: Modifier = Modifier,
+    toAccountManageScreen: () -> Unit = {},
+    toVersionManageScreen: () -> Unit = {},
+    toVersionSettingsScreen: () -> Unit = {}
+) {
+    val xOffset by swapAnimateDpAsState(
+        targetValue = swapTargetValue,
+        swapIn = isVisible,
+        isHorizontal = true
+    )
+
+    val account by AccountsManager.currentAccountFlow.collectAsStateWithLifecycle()
+
+    val contentModifier = modifier.graphicsLayer {
+        val scale = pickUpScale()
+        scaleX = scale
+        scaleY = scale
+    }.offset { IntOffset(x = xOffset.roundToPx(), y = 0) }
+
+    if (isTaller) {
+        ActionMenuTallerContent(
+            modifier = contentModifier,
+            account = account,
+            dockedSide = dockedSide,
+            onLaunchGame = onLaunchGame,
+            toAccountManageScreen = toAccountManageScreen,
+            toVersionManageScreen = toVersionManageScreen,
+            toVersionSettingsScreen = toVersionSettingsScreen,
+        )
+    } else {
+        ActionMenuCardContent(
+            modifier = contentModifier,
+            account = account,
+            onLaunchGame = onLaunchGame,
+            toAccountManageScreen = toAccountManageScreen,
+            toVersionManageScreen = toVersionManageScreen,
+            toVersionSettingsScreen = toVersionSettingsScreen,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun VersionManagerLayout(
+    isRefreshing: Boolean,
+    version: Version?,
+    swapToVersionManage: () -> Unit,
+    openListMenu: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .actionMenuDragExclusion()
+            .clip(shape = MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+            .combinedClickable(
+                role = Role.Button,
+                onClick = swapToVersionManage,
+                onLongClick = {
+                    if (version != null) openListMenu()
+                }
+            ).guideNode(
+                key = GuideKeys.Main.Step.VersionList,
+                preferSide = GuideSide.Above,
+            ).padding(PaddingValues(all = 8.dp))
+    ) {
+        if (isRefreshing) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                LoadingIndicator(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        } else {
+            VersionIconImage(
+                version = version,
+                modifier = Modifier
+                    .size(28.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+
+            if (version == null) {
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .basicMarquee(iterations = Int.MAX_VALUE),
+                    text = stringResource(R.string.versions_manage_no_versions),
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                        text = version.getVersionName(),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
+                    )
+                    if (version.isValid()) {
+                        Text(
+                            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                            text = version.getVersionSummary(),
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
