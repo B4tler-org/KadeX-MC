@@ -411,6 +411,21 @@ object AllSettings : SettingsRegistry() {
     val kadeAnimeStyle = boolSetting("kadeAnimeStyle", true)
 
     /**
+     * KadeX: new dashboard home screen
+     */
+    val kadeDashboard = boolSetting("kadeDashboard", true)
+
+    /**
+     * KadeX: background music on the dashboard
+     */
+    val kadeMusic = boolSetting("kadeMusic", true)
+
+    /**
+     * KadeX: welcome video on the dashboard
+     */
+    val kadeWelcomeVideo = boolSetting("kadeWelcomeVideo", true)
+
+    /**
      * KadeX: Play button glow on the home screen
      */
     val kadePlayGlow = boolSetting("kadePlayGlow", true)

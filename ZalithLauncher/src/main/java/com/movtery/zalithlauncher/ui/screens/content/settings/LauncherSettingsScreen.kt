@@ -356,6 +356,30 @@ fun LauncherSettingsScreen(
                         summary = "Anime-style buttons and background on the home screen. Turn off to use the classic Kade'X look."
                     )
 
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
+                        unit = AllSettings.kadeDashboard,
+                        title = "New dashboard",
+                        summary = "The new home screen with the side menu. Turn off to use the previous home screen."
+                    )
+
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
+                        unit = AllSettings.kadeMusic,
+                        title = "Background music",
+                        summary = "Plays music on the home screen. It pauses when you leave the home screen, when the app goes to the background and when you launch the game."
+                    )
+
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
+                        unit = AllSettings.kadeWelcomeVideo,
+                        title = "Welcome video",
+                        summary = "Shows the looping video in the Welcome section. Turn off to save battery."
+                    )
+
                     IntSliderSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
                         position = CardPosition.Middle,

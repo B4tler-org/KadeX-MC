@@ -431,7 +431,7 @@ private fun KadeQuickPanel(
  * Kade'X MC：记录最近的启动请求（最多 5 条，同一版本只保留最新一条）
  * 只保存“版本名|时间戳”，不记录游戏时长、崩溃或其他会话信息
  */
-private fun recordKadeLaunch(version: Version?) {
+internal fun recordKadeLaunch(version: Version?) {
     if (version == null || !version.isValid()) return
     val name = version.getVersionName()
     val entry = "$name|${System.currentTimeMillis()}"
@@ -730,6 +730,19 @@ fun KadeLauncherScreen(
     onOpenLink: (String) -> Unit,
     startGuideOnce: (GuideKeys.Keys) -> Unit,
 ) {
+    //新的主页仪表盘（可在设置中关闭，关闭后使用原有主页）
+    if (AllSettings.kadeDashboard.state) {
+        KadeHomeScreen(
+            backStackViewModel = backStackViewModel,
+            navigateToVersions = navigateToVersions,
+            onLaunchGame = onLaunchGame,
+            onQuickPlayServer = onQuickPlayServer,
+            onOpenLink = onOpenLink,
+            startGuideOnce = startGuideOnce
+        )
+        return
+    }
+
     //记录“从启动器发起”的启动请求（仅保存版本名与时间，保存在本机）
     val trackedLaunch: (Version?) -> Unit = { version ->
         recordKadeLaunch(version ?: VersionsManager.currentVersion.value)

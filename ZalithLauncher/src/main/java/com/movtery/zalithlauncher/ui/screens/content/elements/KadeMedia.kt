@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import com.movtery.zalithlauncher.R
 
 /**
  * Kade'X MC：主页背景音乐
@@ -50,7 +49,9 @@ object KadeMusic {
     fun start(context: Context) {
         runCatching {
             if (player == null) {
-                player = MediaPlayer.create(context.applicationContext, R.raw.kade_bgm)?.apply {
+                val id = context.resources.getIdentifier("kade_bgm", "raw", context.packageName)
+                if (id == 0) return //没有放入音乐文件：保持静音
+                player = MediaPlayer.create(context.applicationContext, id)?.apply {
                     isLooping = true
                     setVolume(0.35f, 0.35f)
                 }
@@ -125,9 +126,11 @@ private class KadeVideoHolder {
 
     fun attach(context: Context, view: TextureView, texture: SurfaceTexture) {
         release()
+        val id = context.resources.getIdentifier("kade_welcome", "raw", context.packageName)
+        if (id == 0) return //没有放入视频文件：只显示渐变背景
         val player = MediaPlayer()
         try {
-            val afd = context.resources.openRawResourceFd(R.raw.kade_welcome)
+            val afd = context.resources.openRawResourceFd(id)
             player.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
             afd.close()
             val s = Surface(texture)
