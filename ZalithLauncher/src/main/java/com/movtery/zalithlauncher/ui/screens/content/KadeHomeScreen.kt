@@ -148,6 +148,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.AnimeLabel
 import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoLayout
 import com.movtery.zalithlauncher.ui.screens.content.elements.KadeAnime
 import com.movtery.zalithlauncher.ui.screens.content.elements.KadeMusic
+import com.movtery.zalithlauncher.ui.screens.main.KadeDash
 import com.movtery.zalithlauncher.ui.screens.content.elements.KadePerformanceSheet
 import com.movtery.zalithlauncher.ui.screens.content.elements.KadeVideoBackground
 import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
@@ -165,24 +166,7 @@ import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
 import kotlin.math.roundToInt
 
 
-private object KadeDash {
-    val Bg = Color(0xFF080818)
-    val BgTop = Color(0xFF0D0D2B)
-    val Panel = Color(0xFF111234)
-    val Border = Color(0xFF2E3170)
-    val Accent = Color(0xFF6C5CFF)
-    val AccentLight = Color(0xFF9B8CFF)
-    val Blue = Color(0xFF4F7CFF)
-    val Muted = Color(0xFF9EA2D0)
-    val Gold = Color(0xFFFFC857)
-}
 
-private data class KadeSideItem(
-    val label: String,
-    val iconRes: Int,
-    val selected: Boolean,
-    val onClick: () -> Unit
-)
 
 private data class KadeNewsItem(
     val title: String,
@@ -227,30 +211,6 @@ fun KadeHomeScreen(
         val videoEnabled = AllSettings.kadeWelcomeVideo.state
         var showPerformance by remember { mutableStateOf(false) }
 
-        //背景音乐：只在主页可见且应用位于前台时播放
-        val lifecycleOwner = remember(context) { context.findKadeLifecycleOwner() }
-        DisposableEffect(lifecycleOwner, musicEnabled, isVisible) {
-            val owner = lifecycleOwner
-            val resume = {
-                if (musicEnabled && isVisible) KadeMusic.start(context) else KadeMusic.pause()
-            }
-            val observer = LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_START -> resume()
-                    Lifecycle.Event.ON_STOP -> KadeMusic.pause()
-                    else -> {}
-                }
-            }
-            owner?.lifecycle?.addObserver(observer)
-            if (owner == null || owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                resume()
-            }
-            onDispose {
-                owner?.lifecycle?.removeObserver(observer)
-                KadeMusic.pause()
-            }
-        }
-
         //启动游戏前暂停音乐，并记录最近启动
         val launch: (Version?) -> Unit = { version ->
             recordKadeLaunch(version ?: VersionsManager.currentVersion.value)
@@ -280,33 +240,9 @@ fun KadeHomeScreen(
             VersionsManager.currentVersion.value?.takeIf { it.isValid() }?.let { navigateToVersions(it) }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(KadeDash.BgTop, KadeDash.Bg)))
-        ) {
-            DashSidebar(
-                items = listOf(
-                    KadeSideItem("Home", R.drawable.ic_home_filled, true) {},
-                    KadeSideItem("Library", R.drawable.ic_package_2_outlined, false, toLibrary),
-                    KadeSideItem("Downloads", R.drawable.ic_download_2_outlined, false, toDownloads),
-                    KadeSideItem("Versions", R.drawable.ic_style_outlined, false, toVersionSettings),
-                    KadeSideItem("Mods", R.drawable.ic_extension_outlined, false, toDownloads),
-                    KadeSideItem("Settings", R.drawable.ic_settings_filled, false, toSettings)
-                ),
-                onCreditsClick = toSettings
-            )
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(KadeDash.Border.copy(alpha = 0.5f))
-            )
-
+        Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -677,154 +613,6 @@ fun KadeHomeScreen(
                 onDismiss = { showPerformance = false }
             )
         }
-    }
-}
-
-@Composable
-private fun DashSidebar(
-    items: List<KadeSideItem>,
-    onCreditsClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .width(212.dp)
-            .fillMaxHeight()
-            .background(KadeDash.Panel.copy(alpha = 0.55f))
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Image(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp)),
-                painter = painterResource(R.drawable.img_launcher),
-                contentDescription = null
-            )
-            Column {
-                Text(
-                    text = BuildKeys.LAUNCHER_NAME,
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Text(
-                    text = "Play Beyond Limits",
-                    color = KadeDash.Muted,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-
-        items.forEach { item ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .background(
-                        if (item.selected) KadeDash.Accent.copy(alpha = 0.30f) else Color.Transparent
-                    )
-                    .clickable(role = Role.Button, onClick = item.onClick),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(3.dp)
-                        .height(24.dp)
-                        .background(if (item.selected) KadeDash.AccentLight else Color.Transparent)
-                )
-                Spacer(Modifier.width(13.dp))
-                Icon(
-                    modifier = Modifier.size(22.dp),
-                    painter = painterResource(item.iconRes),
-                    contentDescription = null,
-                    tint = if (item.selected) Color.White else KadeDash.Muted
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = item.label,
-                    color = if (item.selected) Color.White else KadeDash.Muted,
-                    style = MaterialTheme.typography.titleSmall
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, KadeDash.Border, RoundedCornerShape(16.dp))
-                .clickable(onClick = onCreditsClick)
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = "Inspired by",
-                color = KadeDash.Muted,
-                style = MaterialTheme.typography.labelSmall
-            )
-            listOf(
-                R.drawable.ic_info_outlined to "Zalith Launcher",
-                R.drawable.ic_github to "Github",
-                R.drawable.ic_terminal_outlined to "Codespaces",
-                R.drawable.ic_lightbulb to "AI Tools"
-            ).forEach { (icon, label) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.size(16.dp),
-                        painter = painterResource(icon),
-                        contentDescription = null,
-                        tint = KadeDash.AccentLight
-                    )
-                    Text(
-                        text = label,
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(KadeDash.Border.copy(alpha = 0.6f))
-            )
-            Text(
-                text = "Owned by",
-                color = KadeDash.Muted,
-                style = MaterialTheme.typography.labelSmall
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(text = "♛", color = KadeDash.Gold)
-                Text(
-                    text = "StrykeX",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-
-        Text(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            text = "v${BuildConfig.VERSION_NAME}  |  ${BuildKeys.LAUNCHER_NAME}",
-            color = KadeDash.Muted,
-            style = MaterialTheme.typography.labelSmall
-        )
     }
 }
 

@@ -18,6 +18,8 @@
 
 package com.movtery.zalithlauncher.ui.screens.main
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -172,11 +174,49 @@ fun MainScreen(
         color = backgroundColor,
         contentColor = onBackgroundColor()
     ) {
-        Column(
+        KadeMusicController()
+        Row(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(KadeDash.BgTop, KadeDash.Bg)))
         ) {
-            KadeTopBar(
+            KadeSidebar(
+                mainScreenKey = mainScreenKey,
+                onHome = toMainScreen,
+                onLibrary = {
+                    screenBackStackModel.mainScreen.removeAndNavigateTo(
+                        remove = NestedNavKey.VersionSettings::class,
+                        screenKey = NormalNavKey.VersionsManager
+                    )
+                },
+                onDownloads = { screenBackStackModel.navigateToDownload() },
+                onVersions = {
+                    VersionsManager.currentVersion.value?.takeIf { it.isValid() }?.let { version ->
+                        screenBackStackModel.mainScreen.navigateTo(
+                            screenKey = NestedNavKey.VersionSettings(version),
+                            useClassEquality = true
+                        )
+                    }
+                },
+                onMultiplayer = {
+                    screenBackStackModel.mainScreen.removeAndNavigateTo(
+                        removes = screenBackStackModel.clearBeforeNavKeys,
+                        screenKey = NormalNavKey.Multiplayer
+                    )
+                },
+                onSettings = {
+                    screenBackStackModel.mainScreen.removeAndNavigateTo(
+                        removes = screenBackStackModel.clearBeforeNavKeys,
+                        screenKey = screenBackStackModel.settingsScreen
+                    )
+                }
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+            KadeContentBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
@@ -187,28 +227,6 @@ fun MainScreen(
                 contentColor = onBackgroundColor(),
                 onScreenBack = {
                     screenBackStackModel.mainScreen.backStack.removeFirstOrNull()
-                },
-                toMainScreen = toMainScreen,
-                toSettingsScreen = {
-                    screenBackStackModel.mainScreen.removeAndNavigateTo(
-                        removes = screenBackStackModel.clearBeforeNavKeys,
-                        screenKey = screenBackStackModel.settingsScreen
-                    )
-                },
-                toDownloadScreen = {
-                    screenBackStackModel.navigateToDownload()
-                },
-                toMultiplayerScreen = {
-                    screenBackStackModel.mainScreen.removeAndNavigateTo(
-                        removes = screenBackStackModel.clearBeforeNavKeys,
-                        screenKey = NormalNavKey.Multiplayer
-                    )
-                },
-                toVersionsScreen = {
-                    screenBackStackModel.mainScreen.removeAndNavigateTo(
-                        removes = screenBackStackModel.clearBeforeNavKeys,
-                        screenKey = NormalNavKey.VersionsManager
-                    )
                 },
                 openFileManager = {
                     eventViewModel.sendEvent(
@@ -248,6 +266,7 @@ fun MainScreen(
                 ) {
                     changeTasksExpandedState()
                 }
+            }
             }
         }
     }

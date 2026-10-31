@@ -361,7 +361,7 @@ fun LauncherSettingsScreen(
                         position = CardPosition.Middle,
                         unit = AllSettings.kadeDashboard,
                         title = "New dashboard",
-                        summary = "The new home screen with the side menu. Turn off to use the previous home screen."
+                        summary = "The new home screen and the Kade'X violet look on every screen. Turn off to use the previous home screen and your chosen color theme."
                     )
 
                     SwitchSettingsCard(
